@@ -1,0 +1,13 @@
+autoDiscovery:
+  clusterName: eks1
+
+awsRegion: ap-southeast-2
+
+autoscalingGroups:
+  - name: eks-default-f0c5d6a4-e78c-7e49-f414-d9543347d05a
+    maxSize: 8
+    minSize: 1
+
+serviceAccount:
+  name: cluster-autoscaler  # 여기를 원하는 ServiceAccount로 변경하세요
+

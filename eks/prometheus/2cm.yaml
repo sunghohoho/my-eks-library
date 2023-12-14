@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  labels:
+    app: prometheus
+  namespace: monitoring
+data:
+  prometheus.yaml: |
+    global:
+      scrape_interval: 5s
+
+    scrape_configs:
+    - job_name: 'kubernetes-endpoints'
+      kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names:
+          - default
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+        regex: true
+        action: keep
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+        regex: (.+)
+        action: replace
+        target_label: __metrics_path__
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        action: replace
+        replacement: $1:$2
+        target_label: __address__
+        
+    - job_name: 'kubernetes-ingress'
+      kubernetes_sd_configs:
+      - role: ingress
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_ingress_name]
+        regex: eks-ingress
+        action: keep
+        target_label: __meta_kubernetes_ingress_name
+      - source_labels: [__meta_kubernetes_ingress_annotation_alb_ingress_kubernetes_io_address]
+        regex: (.+)
+        action: replace
+        targe_label: __address__
+    
+    - job_name: 'kubernetes-pod'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - default
+          
+    - job_name: 'prom-nlb'
+      kubernetes_sd_configs:
+      - role: service
+        namespaces:
+          names:
+          - monitoring

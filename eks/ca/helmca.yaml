@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: cluster-autoscaler
+    meta.helm.sh/release-namespace: kube-system
+  creationTimestamp: "2023-11-09T09:57:38Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: cluster-autoscaler
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: aws-cluster-autoscaler
+    helm.sh/chart: cluster-autoscaler-9.29.4
+  name: cluster-autoscaler-aws-cluster-autoscaler
+  namespace: kube-system
+  resourceVersion: "266747"
+  uid: f8914997-14aa-4497-8c89-ef9f1293c802
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: cluster-autoscaler
+      app.kubernetes.io/name: aws-cluster-autoscaler
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: cluster-autoscaler
+        app.kubernetes.io/name: aws-cluster-autoscaler
+    spec:
+      containers:
+      - command:
+        - ./cluster-autoscaler
+        - --cloud-provider=aws
+        - --namespace=kube-system
+        - --nodes=1:8:eks-default-f0c5d6a4-e78c-7e49-f414-d9543347d05a
+        - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/eks1
+        - --logtostderr=true
+        - --stderrthreshold=info
+        - --v=4
+        env:
+        - name: AWS_REGION
+          value: ap-southeast-2
+        image: registry.k8s.io/autoscaling/cluster-autoscaler:v1.27.2
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health-check
+            port: 8085
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: aws-cluster-autoscaler
+        ports:
+        - containerPort: 8085
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      priorityClassName: system-cluster-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: cluster-autoscaler
+      serviceAccountName: cluster-autoscaler
+      terminationGracePeriodSeconds: 30
+status:
+  conditions:
+  - lastTransitionTime: "2023-11-09T09:57:38Z"
+    lastUpdateTime: "2023-11-09T09:57:39Z"
+    message: ReplicaSet "cluster-autoscaler-aws-cluster-autoscaler-77c8769c44" has
+      successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2023-11-09T09:58:05Z"
+    lastUpdateTime: "2023-11-09T09:58:05Z"
+    message: Deployment does not have minimum availability.
+    reason: MinimumReplicasUnavailable
+    status: "False"
+    type: Available
+  observedGeneration: 1
+  replicas: 1
+  unavailableReplicas: 1
+  updatedReplicas: 1

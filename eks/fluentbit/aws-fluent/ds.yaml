@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: aws-for-fluent-bit
+  namespace: logging
+  labels:
+    helm.sh/chart: aws-for-fluent-bit-0.1.31
+    app.kubernetes.io/name: aws-for-fluent-bit
+    app.kubernetes.io/instance: aws-for-fluent-bit
+    app.kubernetes.io/version: "2.31.12.20231011"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aws-for-fluent-bit
+      app.kubernetes.io/instance: aws-for-fluent-bit
+  template:
+    metadata:
+      annotations:
+        checksum/config: a6fec26eb6040b601c1bf9a011568f401a02b84960769377c97bfa726f27242b
+      labels:
+        app.kubernetes.io/name: aws-for-fluent-bit
+        app.kubernetes.io/instance: aws-for-fluent-bit
+    spec:
+      serviceAccountName: aws-for-fluent-bit
+      dnsPolicy: ClusterFirst
+      containers:
+        - name: aws-for-fluent-bit
+          imagePullPolicy: IfNotPresent
+          image: "public.ecr.aws/aws-observability/aws-for-fluent-bit:2.31.12.20231011"
+          volumeMounts:
+            - name: fluentbit-config
+              mountPath: /fluent-bit/etc/
+            - mountPath: /var/log
+              name: varlog
+            - mountPath: /var/lib/docker/containers
+              name: varlibdockercontainers
+              readOnly: true
+          resources:
+            limits:
+              memory: 250Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi
+          livenessProbe:
+            failureThreshold: 2
+            httpGet:
+              path: /api/v1/health
+              port: 2020
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+      volumes:
+        - name: fluentbit-config
+          configMap:
+            name: aws-for-fluent-bit
+        - hostPath:
+            path: /var/log
+          name: varlog
+        - hostPath:
+            path: /var/lib/docker/containers
+          name: varlibdockercontainers
